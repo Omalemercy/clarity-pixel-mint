@@ -8,7 +8,7 @@ import {
 import { assertEquals } from 'https://deno.land/std@0.90.0/testing/asserts.ts';
 
 Clarinet.test({
-  name: "Test minting pixel art NFT",
+  name: "Test minting pixel art NFT - success case",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
     const wallet1 = accounts.get('wallet_1')!;
@@ -40,6 +40,28 @@ Clarinet.test({
     assertEquals(metadata.name, "Test Art");
     assertEquals(metadata.width, 32);
     assertEquals(metadata.height, 32);
+  }
+});
+
+Clarinet.test({
+  name: "Test minting pixel art NFT - invalid dimensions",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get('deployer')!;
+    const wallet1 = accounts.get('wallet_1')!;
+    
+    let block = chain.mineBlock([
+      Tx.contractCall('pixel-mint', 'mint-pixel-art', [
+        types.ascii("Test Art"),
+        types.tuple({
+          width: types.uint(33),
+          height: types.uint(32),
+          pixels: types.ascii("FF00FF")
+        }),
+        types.principal(wallet1.address)
+      ], deployer.address)
+    ]);
+    
+    block.receipts[0].result.expectErr(103);
   }
 });
 
